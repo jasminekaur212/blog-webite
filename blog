@@ -1,0 +1,138 @@
+BlogWebsite/
+WEB-INF/
+web.xml
+classes/
+BlogServlet.class
+BlogDAO.class
+index.jsp
+blog.jsp
+post.jsp
+...
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app version="3.1" xmlns="http://xmlns.jcp.org/xml/ns/javaee"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee
+         http://xmlns.jcp.org/xml/ns/javaee/web-app_3_1.xsd">
+    <servlet>
+        <servlet-name>BlogServlet</servlet-name>
+        <servlet-class>BlogServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>BlogServlet</servlet-name>
+        <url-pattern>/blog</url-pattern>
+    </servlet-mapping>
+    <welcome-file-list>
+        <welcome-file>index.jsp</welcome-file>
+    </welcome-file-list>
+</web-app>
+import javax.servlet.*;
+import javax.servlet.http.*;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+public class BlogServlet extends HttpServlet {
+    private BlogDAO blogDAO;
+
+    @Override
+    public void init(ServletConfig config) throws ServletException {
+        blogDAO = new BlogDAO();
+    }
+
+    @Override
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        String action = req.getParameter("action");
+        if (action == null) {
+            // Display all blog posts
+            List<Post> posts = blogDAO.getAllPosts();
+            req.setAttribute("posts", posts);
+            req.getRequestDispatcher("blog.jsp").forward(req, resp);
+        } else if (action.equals("view")) {
+            // Display a single blog post
+            int postId = Integer.parseInt(req.getParameter("id"));
+            Post post = blogDAO.getPostById(postId);
+            req.setAttribute("post", post);
+            req.getRequestDispatcher("post.jsp").forward(req, resp);
+        }
+    }
+
+    @Override
+    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        // Handle form submissions (e.g., creating a new post)
+        String title = req.getParameter("title");
+        String content = req.getParameter("content");
+        blogDAO.createPost(title, content);
+        resp.sendRedirect("blog");
+    }
+}
+import java.util.ArrayList;
+import java.util.List;
+
+public class BlogDAO {
+    private List<Post> posts = new ArrayList<>();
+
+    public List<Post> getAllPosts() {
+        return posts;
+    }
+
+    public Post getPostById(int id) {
+        for (Post post : posts) {
+            if (post.getId() == id) {
+                return post;
+            }
+        }
+        return null;
+    }
+
+    public void createPost(String title, String content) {
+        Post post = new Post(title, content);
+        posts.add(post);
+    }
+}
+
+class Post {
+    private int id;
+    private String title;
+    private String content;
+
+    public Post(String title, String content) {
+        this.title = title;
+        this.content = content;
+        this.id = posts.size() + 1;
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public String getContent() {
+        return content;
+    }
+}
+
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Blog Website</title>
+</head>
+<body>
+    <h1>Welcome to my blog!</h1>
+    <p><a href="blog">View all posts</a></p>
+</body>
+</html>
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Blog Posts</title>
+</head>
+<body>
+    <h1>Blog Posts</h1>
+    <ul>
+        <c:forEach items="${posts}" var="post">
+            <li><a href="blog?action=view&id=${
